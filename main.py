@@ -1,20 +1,20 @@
-from __future__ import print_function
 import cv2
 import numpy as np
 
-MAX_FEATURES = 500
-GOOD_MATCH_PERCENT = 0.15
+def alignImages(img1, img2):
+  print("Trying to aligning images...")
 
-def alignImages(im1, im2):
+  MAX_FEATURES = 500
+  GOOD_MATCH_PERCENT = 0.15
 
   # Convert images to grayscale
-  im1Gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
-  im2Gray = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+  img1Gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+  img2Gray = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
   # Detect ORB features and compute descriptors.
   orb = cv2.ORB_create(MAX_FEATURES)
-  keypoints1, descriptors1 = orb.detectAndCompute(im1Gray, None)
-  keypoints2, descriptors2 = orb.detectAndCompute(im2Gray, None)
+  keypoints1, descriptors1 = orb.detectAndCompute(img1Gray, None)
+  keypoints2, descriptors2 = orb.detectAndCompute(img2Gray, None)
 
   # Match features.
   matcher = cv2.DescriptorMatcher_create(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE_HAMMING)
@@ -28,7 +28,7 @@ def alignImages(im1, im2):
   matches = matches[:numGoodMatches]
 
   # Draw top matches
-  imMatches = cv2.drawMatches(im1, keypoints1, im2, keypoints2, matches, None)
+  imMatches = cv2.drawMatches(img1, keypoints1, img2, keypoints2, matches, None)
   cv2.imwrite("result/matches.jpg", imMatches)
 
   # Extract location of good matches
@@ -43,36 +43,53 @@ def alignImages(im1, im2):
   h, mask = cv2.findHomography(points1, points2, cv2.RANSAC)
 
   # Use homography
-  height, width, channels = im2.shape
-  im1Reg = cv2.warpPerspective(im1, h, (width, height))
+  height, width, channels = img2.shape
+  img1AftOffset = cv2.warpPerspective(img1, h, (width, height))
 
-  return im1Reg, h
+  print("Estimated homography : \n",  h)
+  print("Align success.")
+  return img1AftOffset, h
 
+def findDifference(img1, img2):
+
+  # compute difference
+  difference = cv2.subtract(img1, img2)
+
+  # color the mask red
+  Conv_hsv_Gray = cv2.cvtColor(difference, cv2.COLOR_BGR2GRAY)
+  ret, mask = cv2.threshold(Conv_hsv_Gray, 0, 255,cv2.THRESH_BINARY_INV |cv2.THRESH_OTSU)
+  difference[mask != 255] = [0, 0, 255]
+
+  # add the red mask to the images to make the differences obvious
+  img1[mask != 255] = [0, 0, 255]
+  img2[mask != 255] = [0, 0, 255]
+
+  # store images
+  cv2.imwrite('result/difference/diffOverImage1.png', img1)
+  cv2.imwrite('result/difference/diffOverImage2.png', img2)
+  cv2.imwrite('result/difference/diff.png', difference)
+  return 0
 
 if __name__ == '__main__':
 
-  refFilename = 'data/1.JPG'
-  imFilename = 'data/2.JPG'
+  # Read data.
+  refFilename = 'data/1016.JPG'
+  offsetImgFilename = 'data/1014.JPG'
+  referenceImage = cv2.imread(refFilename, cv2.IMREAD_COLOR)
+  offsetImage = cv2.imread(offsetImgFilename, cv2.IMREAD_COLOR)
 
-  # Read reference image
-  print("Reading reference image : ", refFilename)
-  imReference = cv2.imread(refFilename, cv2.IMREAD_COLOR)
-  cv2.rectangle(imReference,(int(0),int(0)),(int(imReference.shape[1]),int(imReference.shape[0])),(0,0,255),5)
+  # Add outside frame to two images.
+  cv2.rectangle(referenceImage,(int(0),int(0)),(int(referenceImage.shape[1]),int(referenceImage.shape[0])),(0,0,255),5)
+  cv2.rectangle(offsetImage,(int(0),int(0)),(int(offsetImage.shape[1]),int(offsetImage.shape[0])),(0,255,0),5)
 
-  # Read image to be aligned
-  print("Reading image to align : ", imFilename);  
-  im = cv2.imread(imFilename, cv2.IMREAD_COLOR)
-  cv2.rectangle(im,(int(0),int(0)),(int(im.shape[1]),int(im.shape[0])),(0,255,0),5)
+  # Align two images.
+  imgOffseted, h = alignImages(offsetImage, referenceImage)
+  cv2.imwrite("result/offseted.jpg", imgOffseted)
 
-  print("Aligning images ...")
-  # Registered image will be resotred in imReg. 
-  # The estimated homography will be stored in h. 
-  imReg, h = alignImages(im, imReference)
+  # Combine offseted image and reference image
+  res = cv2.addWeighted(imgOffseted, 0.5, referenceImage, 0.5, 0)
+  cv2.imwrite("result/result.jpg", res)
 
-  # Write aligned image to disk. 
-  outFilename = "result/aligned.jpg"
-  print("Saving aligned image : ", outFilename); 
-  cv2.imwrite(outFilename, imReg)
-
-  # Print estimated homography
-  print("Estimated homography : \n",  h)
+  # Find two images's difference.
+  diff = findDifference(imgOffseted, referenceImage)
+  # cv2.imwrite("result/difference.jpg", diff)
