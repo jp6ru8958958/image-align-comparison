@@ -5,7 +5,7 @@ def alignImages(img1, img2):
   print("Trying to aligning images...")
 
   MAX_FEATURES = 500
-  GOOD_MATCH_PERCENT = 0.15
+  GOOD_MATCH_PERCENT = 0.02
 
   # Convert images to grayscale
   img1Gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
@@ -50,31 +50,35 @@ def alignImages(img1, img2):
   print("Align success.")
   return img1AftOffset, h
 
-def findDifference(img1, img2):
-
-  # compute difference
-  difference = cv2.subtract(img1, img2)
-
-  # color the mask red
-  Conv_hsv_Gray = cv2.cvtColor(difference, cv2.COLOR_BGR2GRAY)
-  ret, mask = cv2.threshold(Conv_hsv_Gray, 0, 255,cv2.THRESH_BINARY_INV |cv2.THRESH_OTSU)
-  difference[mask != 255] = [0, 0, 255]
-
-  # add the red mask to the images to make the differences obvious
-  img1[mask != 255] = [0, 0, 255]
-  img2[mask != 255] = [0, 0, 255]
+def findDifference(img1, img2, maskShow):
+  
+  for i in [0, 1]:
+    # compute difference
+    difference = cv2.subtract(img1, img2)
+    # color the mask red
+    Conv_hsv_Gray = cv2.cvtColor(difference, cv2.COLOR_BGR2GRAY)
+    ret, mask = cv2.threshold(Conv_hsv_Gray, 0, 255,cv2.THRESH_BINARY_INV |cv2.THRESH_OTSU)
+    difference[mask != 255] = [0, 0, 255]
+    # add the red mask to the images to make the differences obvious
+    img1[mask != 255] = [0, 0, 255]
+    img2[mask != 255] = [0, 0, 255]
+    maskShow[mask != 255] = 255
+    temp = img1
+    img1 = img2
+    img2 = temp
 
   # store images
   cv2.imwrite('result/difference/diffOverImage1.png', img1)
   cv2.imwrite('result/difference/diffOverImage2.png', img2)
-  cv2.imwrite('result/difference/diff.png', difference)
-  return 0
+  cv2.imwrite('result/difference/diffMask.png', difference)
+  
+  return maskShow
 
 if __name__ == '__main__':
 
   # Read data.
-  refFilename = 'data/1016.JPG'
-  offsetImgFilename = 'data/1014.JPG'
+  refFilename = 'data/w20201215.JPG'
+  offsetImgFilename = 'data/w20201223.JPG'
   referenceImage = cv2.imread(refFilename, cv2.IMREAD_COLOR)
   offsetImage = cv2.imread(offsetImgFilename, cv2.IMREAD_COLOR)
 
@@ -91,5 +95,7 @@ if __name__ == '__main__':
   cv2.imwrite("result/result.jpg", res)
 
   # Find two images's difference.
-  diff = findDifference(imgOffseted, referenceImage)
+  mask = np.zeros((offsetImage.shape[0], offsetImage.shape[1]))
+  diff = findDifference(imgOffseted, referenceImage, mask)
+  cv2.imwrite('result/difference/mask.png', mask)
   # cv2.imwrite("result/difference.jpg", diff)
