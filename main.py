@@ -1,11 +1,13 @@
 import cv2
 import numpy as np
+from PIL import Image
+
 
 def alignImages(img1, img2):
     print("Trying to aligning images...")
 
     MAX_FEATURES = 500
-    GOOD_MATCH_PERCENT = 0.15
+    GOOD_MATCH_PERCENT = 0.45
 
     # Convert images to grayscale
     img1Gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
@@ -51,7 +53,14 @@ def alignImages(img1, img2):
     return img1AftOffset, h
 
 def findDifference(img1, img2, maskShow):
-    
+    '''
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    img2  = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    ret,img1 = cv2.threshold(img1,127,255,cv2.THRESH_BINARY_INV)
+    ret,img2 = cv2.threshold(img2,127,255,cv2.THRESH_BINARY_INV)
+    cv2.imwrite('result/difference/threshold_1.png', img1)
+    cv2.imwrite('result/difference/threshold_2.png', img2)
+    '''
     for i in [0, 1]:
         # compute difference
         difference = cv2.subtract(img1, img2)
@@ -74,18 +83,36 @@ def findDifference(img1, img2, maskShow):
     
     return maskShow
 
-if __name__ == '__main__':
+def img_resize_to_same(img, x, y):
+    height, width = img.shape[:2]
+    black_image = np.zeros((x,y,3), np.uint8)
+    black_image[:,:] = (0,0,0)
+    image = black_image.copy()
+    image[0:height, 0:width] = img.copy()
+    return image
 
+def image_aligin():
     # Read data.
-    refFilename = 'data/DJI_0215.JPG'
-    offsetImgFilename = 'data/DJI_0216.JPG'
+    refFilename = 'data/全景/jpg/0202.jpg'
+    offsetImgFilename = 'data/全景/jpg/0313.jpg'
     referenceImage = cv2.imread(refFilename, cv2.IMREAD_COLOR)
     offsetImage = cv2.imread(offsetImgFilename, cv2.IMREAD_COLOR)
+    # resize to same
+    bigger_x = max(referenceImage.shape[0], offsetImage.shape[0])
+    bigger_y = max(referenceImage.shape[1], offsetImage.shape[1])
+    background_img = np.zeros((bigger_x, bigger_y, 3), np.uint8)
+    print('image size:{}'.format(background_img.shape))
+    referenceImage = img_resize_to_same(referenceImage, bigger_x, bigger_y)
+    cv2.imwrite("result/origin1.jpg", referenceImage)
+    offsetImage = img_resize_to_same(offsetImage, bigger_x, bigger_y)
+    cv2.imwrite("result/origin2.jpg", offsetImage)
+
+    # offsetImage = cv2.resize(offsetImage, (referenceImage.shape[1], referenceImage.shape[0]), interpolation=cv2.INTER_CUBIC)
 
     # Add outside frame to two images.
     cv2.rectangle(referenceImage,(int(0),int(0)),(int(referenceImage.shape[1]),int(referenceImage.shape[0])),(0,0,255),5)
     cv2.rectangle(offsetImage,(int(0),int(0)),(int(offsetImage.shape[1]),int(offsetImage.shape[0])),(0,255,0),5)
-    
+
     # Align two images.
     imgOffseted, h = alignImages(offsetImage, referenceImage)
     cv2.imwrite("result/offseted.jpg", imgOffseted)
@@ -94,8 +121,17 @@ if __name__ == '__main__':
     res = cv2.addWeighted(imgOffseted, 0.5, referenceImage, 0.5, 0)
     cv2.imwrite("result/result.jpg", res)
 
-    # Find two images's difference.
-    mask = np.zeros((offsetImage.shape[0], offsetImage.shape[1]))
-    diff = findDifference(imgOffseted, referenceImage, mask)
+def image_comparison():
+    refFilename1 = 'result/offseted.jpg'
+    refFilename2 = 'result/origin1.jpg'
+    img1 = cv2.imread(refFilename1, cv2.IMREAD_COLOR)
+    img2 = cv2.imread(refFilename2, cv2.IMREAD_COLOR)
+    mask = np.zeros((int(img1.shape[0]), int(img1.shape[1])))
+    diff = findDifference(img1, img2, mask)
     cv2.imwrite('result/difference/mask.png', mask)
-    # cv2.imwrite("result/difference.jpg", diff)
+
+
+if __name__ == '__main__':
+    #image_aligin()
+    image_comparison()
+
