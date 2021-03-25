@@ -91,10 +91,8 @@ def img_resize_to_same(img, x, y):
     image[0:height, 0:width] = img.copy()
     return image
 
-def image_aligin():
+def image_aligin(refFilename, offsetImgFilename):
     # Read data.
-    refFilename = 'data/全景/jpg/0202.jpg'
-    offsetImgFilename = 'data/全景/jpg/0313.jpg'
     referenceImage = cv2.imread(refFilename, cv2.IMREAD_COLOR)
     offsetImage = cv2.imread(offsetImgFilename, cv2.IMREAD_COLOR)
     # resize to same
@@ -132,6 +130,9 @@ def image_comparison():
 
 
 if __name__ == '__main__':
-    #image_aligin()
+    refFilename = 'data/全景/jpg/0202.jpg'
+    offsetImgFilename = 'data/全景/jpg/0313.jpg'
+    
+    image_aligin()
     image_comparison()
 
