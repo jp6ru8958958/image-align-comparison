@@ -17,4 +17,4 @@ Result example:
 ![matches](images-for-README/matches.png)
 ![align](images-for-README/align.png)
 ![comparison_origin](images-for-README/comparison_origin.png)
-![comparison_mask](images-for-README/comparison_mask)
+![comparison_mask](images-for-README/comparison_mask.png)
