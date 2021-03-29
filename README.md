@@ -14,7 +14,7 @@ python main.py <image1> <image2>
 ```
 
 Result example:
-![matches](https://github.com/jp6ru8958958/image-align-comparison/blob/master/images-for-README/matches.png)
-![align](https://github.com/jp6ru8958958/image-align-comparison/blob/master/images-for-README/align.png)
-![comparison_origin](https://github.com/jp6ru8958958/image-align-comparison/blob/master/images-for-README/comparison_origin.png)
-![comparison_mask](https://github.com/jp6ru8958958/image-align-comparison/blob/master/images-for-README/comparison_mask)
+![matches](images-for-README/matches.png)
+![align](images-for-README/align.png)
+![comparison_origin](images-for-README/comparison_origin.png)
+![comparison_mask](images-for-README/comparison_mask)
