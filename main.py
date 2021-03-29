@@ -1,3 +1,4 @@
+import sys
 import cv2
 import numpy as np
 from PIL import Image
@@ -130,9 +131,9 @@ def image_comparison():
 
 
 if __name__ == '__main__':
-    refFilename = 'data/全景/jpg/0202.jpg'
-    offsetImgFilename = 'data/全景/jpg/0313.jpg'
-    
-    image_aligin()
+    refFilename = sys.argv[1]
+    offsetImgFilename = sys.argv[2]
+
+    image_aligin(refFilename, offsetImgFilename)
     image_comparison()
 
